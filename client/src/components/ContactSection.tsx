@@ -63,9 +63,9 @@ export default function ContactSection() {
 
     // --- EMAILJS AYARLARI ---
     // Buraya not aldığın 3 kodu tekrar yapıştır (öncekinde yapmıştık)
-    const serviceID = "BURAYA_SERVICE_ID_YAZ";
-    const templateID = "BURAYA_TEMPLATE_ID_YAZ";
-    const publicKey = "BURAYA_PUBLIC_KEY_YAZ";
+    const serviceID = "service_y0l2lio";
+    const templateID = "template_6z4oxhm";
+    const publicKey = "Z3GT9yfClD6IXxHkw";
 
     const templateParams = {
       from_name: data.name,
