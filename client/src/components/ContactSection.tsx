@@ -16,17 +16,20 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
-import { useMutation } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
-import { Send, Phone, Mail, MapPin, CheckCircle } from "lucide-react";
+import { Send, Phone, Mail, MapPin, CheckCircle, MessageCircle } from "lucide-react";
+// EmailJS kütüphanesini ekledik
+import emailjs from '@emailjs/browser';
 
 const services = [
-  { value: "turnkey", label: "Anahtar Teslim Tadilat" },
-  { value: "painting", label: "Profesyonel Boya" },
-  { value: "ceramic", label: "Seramik & Fayans" },
-  { value: "plasterboard", label: "Alçıpan & Asma Tavan" },
-  { value: "facade", label: "Dış Cephe İzolasyonu" },
-  { value: "other", label: "Diğer" },
+  { value: "Anahtar Teslim Tadilat", label: "Anahtar Teslim Tadilat (komple)" },
+  { value: "Profesyonel Boya", label: "Profesyonel Boya" },
+  { value: "Seramik & Fayans", label: "Seramik & Fayans" },
+  { value: "Alçı & Sıva", label: "Alçı & Sıva" },
+  { value: "Alçıpan & Asma Tavan", label: "Alçıpan & Asma Tavan" },
+  { value: "Dış Cephe", label: "Dış Cephe" },
+  { value: "Mantolama & İzolasyon", label: "Su ve Isı Yalıtım (Mantolama)" },
+  { value: "Dekoratif Uygulamalar", label: "Kartonpiyer - Söve - Çıta (TV Ünitesi)" },
+  { value: "Diğer", label: "Diğer" },
 ];
 
 const contactFormSchema = z.object({
@@ -42,6 +45,7 @@ type ContactFormValues = z.infer<typeof contactFormSchema>;
 export default function ContactSection() {
   const { toast } = useToast();
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const form = useForm<ContactFormValues>({
     resolver: zodResolver(contactFormSchema),
@@ -54,61 +58,62 @@ export default function ContactSection() {
     },
   });
 
-  const mutation = useMutation({
-    mutationFn: async (data: ContactFormValues) => {
-      const response = await apiRequest("POST", "/api/contact", {
-        ...data,
-        email: data.email || null,
-        message: data.message || null,
-      });
-      return response.json();
-    },
-    onSuccess: () => {
-      setIsSubmitted(true);
-      toast({
-        title: "Talebiniz Alındı",
-        description: "En kısa sürede sizinle iletişime geçeceğiz.",
-      });
-    },
-    onError: () => {
-      toast({
-        title: "Hata",
-        description: "Bir hata oluştu. Lütfen tekrar deneyiniz.",
-        variant: "destructive",
-      });
-    },
-  });
-
   const onSubmit = (data: ContactFormValues) => {
-    mutation.mutate(data);
+    setIsLoading(true);
+
+    // --- EMAILJS AYARLARI ---
+    // Buraya not aldığın 3 kodu tekrar yapıştır (öncekinde yapmıştık)
+    const serviceID = "BURAYA_SERVICE_ID_YAZ";
+    const templateID = "BURAYA_TEMPLATE_ID_YAZ";
+    const publicKey = "BURAYA_PUBLIC_KEY_YAZ";
+
+    const templateParams = {
+      from_name: data.name,
+      from_email: data.email || "Belirtilmedi",
+      phone: data.phone,
+      service_type: data.service,
+      message: data.message || "Mesaj yok",
+    };
+
+    emailjs.send(serviceID, templateID, templateParams, publicKey)
+      .then((response) => {
+        console.log('SUCCESS!', response.status, response.text);
+        setIsSubmitted(true);
+        setIsLoading(false);
+        toast({
+          title: "Talebiniz Alındı",
+          description: "En kısa sürede sizinle iletişime geçeceğiz.",
+        });
+        form.reset();
+      }, (err) => {
+        console.log('FAILED...', err);
+        setIsLoading(false);
+        toast({
+          title: "Hata",
+          description: "Mesaj gönderilemedi. Lütfen WhatsApp'tan yazınız.",
+          variant: "destructive",
+        });
+      });
   };
 
   if (isSubmitted) {
     return (
-      <section
-        id="contact-form"
-        className="py-24 lg:py-32 bg-background"
-        data-testid="contact-section"
-      >
+      <section id="contact" className="py-24 lg:py-32 bg-background">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <Card className="max-w-2xl mx-auto p-12 text-center bg-card border-card-border">
             <div className="p-4 bg-primary/10 rounded-full w-fit mx-auto mb-6">
               <CheckCircle className="w-12 h-12 text-primary" />
             </div>
-            <h3 className="text-2xl font-bold text-foreground mb-4" data-testid="text-success-title">
+            <h3 className="text-2xl font-bold text-foreground mb-4">
               Talebiniz Başarıyla Alındı
             </h3>
-            <p className="text-muted-foreground mb-6" data-testid="text-success-message">
+            <p className="text-muted-foreground mb-6">
               En kısa sürede uzman ekibimiz sizinle iletişime geçecektir.
               Milsoy Yapı'yı tercih ettiğiniz için teşekkür ederiz.
             </p>
             <Button
               variant="outline"
-              onClick={() => {
-                setIsSubmitted(false);
-                form.reset();
-              }}
-              data-testid="button-new-request"
+              onClick={() => setIsSubmitted(false)}
             >
               Yeni Talep Oluştur
             </Button>
@@ -119,20 +124,13 @@ export default function ContactSection() {
   }
 
   return (
-    <section
-      id="contact-form"
-      className="py-24 lg:py-32 bg-background"
-      data-testid="contact-section"
-    >
+    <section id="contact" className="py-24 lg:py-32 bg-background">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
           <span className="text-sm font-medium text-primary tracking-wider uppercase mb-4 block">
             İletişim
           </span>
-          <h2
-            className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground mb-6"
-            data-testid="contact-title"
-          >
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground mb-6">
             Ücretsiz <span className="text-primary">Keşif Talep Edin</span>
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
@@ -141,6 +139,7 @@ export default function ContactSection() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-12">
+          {/* Form Alanı */}
           <div className="lg:col-span-3">
             <Card className="p-8 bg-card border-card-border">
               <Form {...form}>
@@ -151,16 +150,9 @@ export default function ContactSection() {
                       name="name"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-foreground">
-                            Ad Soyad <span className="text-primary">*</span>
-                          </FormLabel>
+                          <FormLabel>Ad Soyad <span className="text-primary">*</span></FormLabel>
                           <FormControl>
-                            <Input
-                              placeholder="Adınız ve soyadınız"
-                              className="bg-background border-border"
-                              data-testid="input-name"
-                              {...field}
-                            />
+                            <Input placeholder="Adınız ve soyadınız" className="bg-background" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -171,17 +163,9 @@ export default function ContactSection() {
                       name="phone"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-foreground">
-                            Telefon <span className="text-primary">*</span>
-                          </FormLabel>
+                          <FormLabel>Telefon <span className="text-primary">*</span></FormLabel>
                           <FormControl>
-                            <Input
-                              type="tel"
-                              placeholder="05XX XXX XX XX"
-                              className="bg-background border-border"
-                              data-testid="input-phone"
-                              {...field}
-                            />
+                            <Input type="tel" placeholder="05XX XXX XX XX" className="bg-background" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -195,15 +179,9 @@ export default function ContactSection() {
                       name="email"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-foreground">E-posta</FormLabel>
+                          <FormLabel>E-posta</FormLabel>
                           <FormControl>
-                            <Input
-                              type="email"
-                              placeholder="ornek@email.com"
-                              className="bg-background border-border"
-                              data-testid="input-email"
-                              {...field}
-                            />
+                            <Input type="email" placeholder="ornek@email.com" className="bg-background" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -214,18 +192,10 @@ export default function ContactSection() {
                       name="service"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-foreground">
-                            Hizmet Türü <span className="text-primary">*</span>
-                          </FormLabel>
-                          <Select
-                            value={field.value}
-                            onValueChange={field.onChange}
-                          >
+                          <FormLabel>Hizmet Türü <span className="text-primary">*</span></FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
                             <FormControl>
-                              <SelectTrigger
-                                className="bg-background border-border"
-                                data-testid="select-service"
-                              >
+                              <SelectTrigger className="bg-background">
                                 <SelectValue placeholder="Hizmet seçiniz" />
                               </SelectTrigger>
                             </FormControl>
@@ -248,34 +218,18 @@ export default function ContactSection() {
                     name="message"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-foreground">Mesajınız</FormLabel>
+                        <FormLabel>Mesajınız</FormLabel>
                         <FormControl>
-                          <Textarea
-                            placeholder="Projeniz hakkında detaylı bilgi verebilirsiniz..."
-                            className="bg-background border-border min-h-32 resize-none"
-                            data-testid="textarea-message"
-                            {...field}
-                          />
+                          <Textarea placeholder="Projeniz hakkında detaylı bilgi verebilirsiniz..." className="bg-background min-h-32 resize-none" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
 
-                  <Button
-                    type="submit"
-                    size="lg"
-                    className="w-full"
-                    disabled={mutation.isPending}
-                    data-testid="button-submit"
-                  >
-                    {mutation.isPending ? (
-                      "Gönderiliyor..."
-                    ) : (
-                      <>
-                        <Send className="w-4 h-4 mr-2" />
-                        Keşif Talep Et
-                      </>
+                  <Button type="submit" size="lg" className="w-full" disabled={isLoading}>
+                    {isLoading ? "Gönderiliyor..." : (
+                      <> <Send className="w-4 h-4 mr-2" /> Keşif Talep Et </>
                     )}
                   </Button>
                 </form>
@@ -283,66 +237,47 @@ export default function ContactSection() {
             </Card>
           </div>
 
+          {/* İletişim Bilgileri */}
           <div className="lg:col-span-2 space-y-6">
             <Card className="p-6 bg-card border-card-border">
               <div className="flex items-start gap-4">
-                <div className="p-3 bg-primary/10 rounded-md">
-                  <Phone className="w-6 h-6 text-primary" />
-                </div>
+                <div className="p-3 bg-primary/10 rounded-md"> <Phone className="w-6 h-6 text-primary" /> </div>
                 <div>
-                  <h4 className="font-semibold text-foreground mb-1">Telefon</h4>
-                  <a
-                    href="tel:+905551234567"
-                    className="text-muted-foreground hover:text-primary transition-colors"
-                    data-testid="contact-phone"
-                  >
-                    +90 555 123 45 67
-                  </a>
+                  <h4 className="font-semibold mb-1">Telefon</h4>
+                  <a href="tel:+905444651940" className="text-muted-foreground hover:text-primary transition-colors">+90 544 465 19 40</a>
                 </div>
               </div>
             </Card>
 
             <Card className="p-6 bg-card border-card-border">
               <div className="flex items-start gap-4">
-                <div className="p-3 bg-primary/10 rounded-md">
-                  <Mail className="w-6 h-6 text-primary" />
-                </div>
+                <div className="p-3 bg-primary/10 rounded-md"> <MessageCircle className="w-6 h-6 text-primary" /> </div>
                 <div>
-                  <h4 className="font-semibold text-foreground mb-1">E-posta</h4>
-                  <a
-                    href="mailto:info@milsoyyapi.com"
-                    className="text-muted-foreground hover:text-primary transition-colors"
-                    data-testid="contact-email"
-                  >
-                    info@milsoyyapi.com
-                  </a>
+                  <h4 className="font-semibold mb-1">WhatsApp</h4>
+                  <a href="https://wa.me/905444651940" target="_blank" className="text-muted-foreground hover:text-primary transition-colors">+90 544 465 19 40</a>
                 </div>
               </div>
             </Card>
 
             <Card className="p-6 bg-card border-card-border">
               <div className="flex items-start gap-4">
-                <div className="p-3 bg-primary/10 rounded-md">
-                  <MapPin className="w-6 h-6 text-primary" />
-                </div>
+                <div className="p-3 bg-primary/10 rounded-md"> <Mail className="w-6 h-6 text-primary" /> </div>
                 <div>
-                  <h4 className="font-semibold text-foreground mb-1">Adres</h4>
-                  <p className="text-muted-foreground" data-testid="contact-address">
-                    Milas Merkez, Muğla
-                    <br />
-                    Türkiye
-                  </p>
+                  <h4 className="font-semibold mb-1">E-posta</h4>
+                  <a href="mailto:milsoyinsaat@gmail.com" className="text-muted-foreground hover:text-primary transition-colors">milsoyinsaat@gmail.com</a>
                 </div>
               </div>
             </Card>
-
-            <div className="p-6 bg-primary/5 border border-primary/20 rounded-md">
-              <p className="text-sm text-muted-foreground">
-                <span className="text-primary font-semibold">Hızlı Yanıt:</span>{" "}
-                Taleplerinize 24 saat içinde dönüş yapıyoruz. Acil projeler için
-                direkt arayabilirsiniz.
-              </p>
-            </div>
+            
+             <Card className="p-6 bg-card border-card-border">
+              <div className="flex items-start gap-4">
+                <div className="p-3 bg-primary/10 rounded-md"> <MapPin className="w-6 h-6 text-primary" /> </div>
+                <div>
+                  <h4 className="font-semibold mb-1">Adres</h4>
+                  <p className="text-muted-foreground">Milas Merkez, Muğla<br />Türkiye</p>
+                </div>
+              </div>
+            </Card>
           </div>
         </div>
       </div>

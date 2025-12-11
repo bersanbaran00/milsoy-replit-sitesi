@@ -49,8 +49,11 @@ export default function Header() {
             className="flex items-center gap-2"
             data-testid="logo-link"
           >
-            <span className="text-2xl font-bold text-primary">MILSOY</span>
-            <span className="text-2xl font-light text-foreground">YAPI</span>
+            <img 
+              src="/milsoyinsaatsaydam.png" 
+              alt="Milsoy Yapı" 
+              className="h-12 w-auto"
+            />
           </a>
 
           <nav className="hidden md:flex items-center gap-8" data-testid="nav-desktop">

@@ -34,7 +34,7 @@ export default function HeroSection() {
         <div className="flex items-center justify-center gap-2 mb-6">
           <Sparkles className="w-5 h-5 text-primary" />
           <span className="text-sm font-medium text-primary tracking-wider uppercase">
-            Premium İnşaat & Dekorasyon
+            Yapı Tadilat & Dekorasyon
           </span>
           <Sparkles className="w-5 h-5 text-primary" />
         </div>
@@ -43,17 +43,16 @@ export default function HeroSection() {
           className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-bold text-white mb-6 leading-tight"
           data-testid="hero-headline"
         >
-          Hayallerinizi
+          Evinizin Tadilat
           <br />
-          <span className="text-primary">İnşa Ediyoruz</span>
+          <span className="text-primary">Dekorasyon Ustası</span>
         </h1>
 
         <p
           className="text-lg sm:text-xl text-white/80 max-w-2xl mx-auto mb-10 leading-relaxed"
           data-testid="hero-subheadline"
         >
-          Muğla ve Milas bölgesinde, ustalık ve zarafetin buluştuğu
-          premium inşaat ve dekorasyon hizmetleri sunuyoruz.
+          Boya, seramik, alçı-sıva, asma tavan ve komple tadilat işleriniz için Milas ve çevresinde hizmetinizdeyiz. Uygun fiyat, Kaliteli işçilik, zamanında teslim.
         </p>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
